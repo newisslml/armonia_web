@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biblioteca Zen — Armonía</title>
-<meta name="description" content="Biblioteca Zen: libros de tarot, meditación y astrología. Envíos a todo Chile.">
+<title>Mi cuenta — Armonía</title>
+<meta name="description" content="Inicia sesión o crea tu cuenta en Armonía.">
 <script>
 (function () {
   var t = localStorage.getItem('armonia-theme');
@@ -57,7 +57,7 @@
     <ul class="container">
       <li><a href="categoria-hogar-zen.html">Protección Hogar Zen</a></li>
       <li><a href="categoria-rituales-terapias.html">Rituales y Terapias</a></li>
-      <li><a href="categoria-biblioteca-zen.html" class="active">Biblioteca Zen</a></li>
+      <li><a href="categoria-biblioteca-zen.html">Biblioteca Zen</a></li>
       <li><a href="categoria-proteccion-personal.html">Protección Personal Zen</a></li>
       <li><a href="categoria-kits-cajas.html">Kits y Cajas</a></li>
       <li><a href="categoria-amuletos-mundo.html">Amuletos del Mundo</a></li>
@@ -67,33 +67,56 @@
 </header>
 
 <main>
+  <section class="account-page">
+    <div class="container account-container">
 
-  <section class="cat-page-head">
-    <div class="container">
-      <h1>Biblioteca Zen</h1>
-      <p class="cat-page-sub">Libros y guías para profundizar en tu camino espiritual.</p>
-    </div>
-  </section>
+      <div id="authBox" class="auth-box">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" data-tab="login">Iniciar sesión</button>
+          <button type="button" class="auth-tab" data-tab="registro">Crear cuenta</button>
+        </div>
 
-  <section class="cat-page">
-    <div class="container">
-      <div class="cat-page-toolbar">
-        <p class="result-count" id="resultCount">Cargando productos…</p>
-        <label class="sort-select">
-          Ordenar por
-          <select>
-            <option>Más vendidos</option>
-            <option>Precio: menor a mayor</option>
-            <option>Precio: mayor a menor</option>
-            <option>Novedades</option>
-          </select>
-        </label>
+        <form id="loginForm" class="auth-form">
+          <label>Email
+            <input type="email" name="email" required>
+          </label>
+          <label>Contraseña
+            <input type="password" name="password" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Iniciar sesión</button>
+          <p class="form-msg" id="loginMsg"></p>
+        </form>
+
+        <form id="registroForm" class="auth-form" hidden>
+          <label>Nombre
+            <input type="text" name="nombre">
+          </label>
+          <label>Email
+            <input type="email" name="email" required>
+          </label>
+          <label>Contraseña (mín. 8 caracteres)
+            <input type="password" name="password" required minlength="8">
+          </label>
+          <button class="btn btn-primary" type="submit">Crear cuenta</button>
+          <p class="form-msg" id="registroMsg"></p>
+        </form>
       </div>
 
-      <div class="prod-grid" id="prodGrid" data-categoria="biblioteca-zen"></div>
+      <div id="accountBox" class="account-box" hidden>
+        <div class="account-head">
+          <div>
+            <h1>Hola, <span id="accountNombre"></span></h1>
+            <p class="text-muted" id="accountEmail"></p>
+          </div>
+          <button id="logoutBtn" class="btn btn-ghost btn-sm">Cerrar sesión</button>
+        </div>
+
+        <h2>Mis pedidos</h2>
+        <div id="pedidosList"><p class="cat-empty">Cargando…</p></div>
+      </div>
+
     </div>
   </section>
-
 </main>
 
 <footer class="site-footer">
@@ -144,5 +167,105 @@
 </footer>
 
 <script src="js/main.js"></script>
+<script>
+  const authBox = document.getElementById('authBox');
+  const accountBox = document.getElementById('accountBox');
+  const loginForm = document.getElementById('loginForm');
+  const registroForm = document.getElementById('registroForm');
+  const authTabs = document.querySelectorAll('.auth-tab');
+
+  authTabs.forEach((tab) => tab.addEventListener('click', () => {
+    authTabs.forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+    loginForm.hidden = tab.dataset.tab !== 'login';
+    registroForm.hidden = tab.dataset.tab !== 'registro';
+  }));
+
+  function mostrarCuenta(usuario) {
+    authBox.hidden = true;
+    accountBox.hidden = false;
+    document.getElementById('accountNombre').textContent = usuario.nombre || usuario.email;
+    document.getElementById('accountEmail').textContent = usuario.email;
+    cargarPedidos();
+  }
+
+  async function cargarPedidos() {
+    const cont = document.getElementById('pedidosList');
+    try {
+      const pedidos = await apiFetch('/pedidos');
+      if (!pedidos.length) {
+        cont.innerHTML = '<p class="cat-empty">Todavía no tienes pedidos.</p>';
+        return;
+      }
+      cont.innerHTML = pedidos
+        .map(
+          (p) => `
+        <div class="pedido-card">
+          <div class="pedido-card-head">
+            <strong>Pedido #${p.id}</strong>
+            <span class="pedido-estado">${p.estado}</span>
+          </div>
+          <p class="text-muted">${new Date(p.creadoEn).toLocaleDateString('es-CL')} · ${formatCLP(p.total)}</p>
+        </div>`
+        )
+        .join('');
+    } catch {
+      cont.innerHTML = '<p class="cat-empty">No pudimos cargar tus pedidos.</p>';
+    }
+  }
+
+  (async function init() {
+    try {
+      const usuario = await apiFetch('/auth/me');
+      mostrarCuenta(usuario);
+    } catch {
+      authBox.hidden = false;
+      accountBox.hidden = true;
+    }
+  })();
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(loginForm);
+    const loginMsg = document.getElementById('loginMsg');
+    loginMsg.textContent = '';
+    try {
+      const usuario = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }),
+      });
+      mostrarCuenta(usuario);
+      refreshCartCount();
+    } catch (err) {
+      loginMsg.textContent = err.message;
+    }
+  });
+
+  registroForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(registroForm);
+    const registroMsg = document.getElementById('registroMsg');
+    registroMsg.textContent = '';
+    try {
+      const usuario = await apiFetch('/auth/registro', {
+        method: 'POST',
+        body: JSON.stringify({ email: fd.get('email'), password: fd.get('password'), nombre: fd.get('nombre') }),
+      });
+      mostrarCuenta(usuario);
+      refreshCartCount();
+    } catch (err) {
+      registroMsg.textContent = err.message;
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+      await apiFetch('/auth/logout', { method: 'POST' });
+    } catch {
+      // igual recargamos: la cookie se invalida del lado del navegador al expirar
+    }
+    location.reload();
+  });
+</script>
 </body>
 </html>

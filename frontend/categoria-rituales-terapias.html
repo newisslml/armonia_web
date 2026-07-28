@@ -43,10 +43,10 @@
         <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><g stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></g></svg>
         <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <a href="#" class="icon-btn" aria-label="Mi cuenta">
+      <a href="mi-cuenta.html" class="icon-btn" aria-label="Mi cuenta">
         <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       </a>
-      <a href="#" class="icon-btn cart-btn" aria-label="Carrito">
+      <a href="carrito.html" class="icon-btn cart-btn" aria-label="Carrito">
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 4h2l2.4 12.4a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L20 8H6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="21" r="1.4" fill="currentColor"/><circle cx="18" cy="21" r="1.4" fill="currentColor"/></svg>
         <span class="cart-count">0</span>
       </a>
@@ -61,7 +61,7 @@
       <li><a href="categoria-proteccion-personal.html">Protección Personal Zen</a></li>
       <li><a href="categoria-kits-cajas.html">Kits y Cajas</a></li>
       <li><a href="categoria-amuletos-mundo.html">Amuletos del Mundo</a></li>
-      <li><a href="#">Contacto</a></li>
+      <li><a href="contacto.html">Contacto</a></li>
     </ul>
   </nav>
 </header>
@@ -78,7 +78,7 @@
   <section class="cat-page">
     <div class="container">
       <div class="cat-page-toolbar">
-        <p class="result-count">8 productos</p>
+        <p class="result-count" id="resultCount">Cargando productos…</p>
         <label class="sort-select">
           Ordenar por
           <select>
@@ -90,58 +90,7 @@
         </label>
       </div>
 
-      <div class="prod-grid">
-        <article class="prod-card">
-          <div class="prod-img">◈</div>
-          <span class="prod-badge">Más vendido</span>
-          <h3>Kit Ritual de Abundancia</h3>
-          <p class="prod-price">$19.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🃏</div>
-          <h3>Baraja Tarot Rider-Waite</h3>
-          <p class="prod-price">$14.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">💎</div>
-          <h3>Set de Cristales para Chakras</h3>
-          <p class="prod-price">$16.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🔮</div>
-          <span class="prod-badge">Nuevo</span>
-          <h3>Bola de Cristal Adivinatoria</h3>
-          <p class="prod-price">$22.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🕯️</div>
-          <h3>Kit Ritual de Luna Nueva</h3>
-          <p class="prod-price">$17.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🧘</div>
-          <h3>Diapasón Terapéutico</h3>
-          <p class="prod-price">$13.490</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🌊</div>
-          <h3>Set Terapia con Cuencos Tibetanos</h3>
-          <p class="prod-price">$34.990</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-        <article class="prod-card">
-          <div class="prod-img">🍃</div>
-          <h3>Kit de Sahumación Completo</h3>
-          <p class="prod-price">$15.490</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>
-      </div>
+      <div class="prod-grid" id="prodGrid" data-categoria="rituales-terapias"></div>
     </div>
   </section>
 
@@ -175,7 +124,7 @@
         <li><a href="#">Cómo comprar</a></li>
         <li><a href="#">Cambios y devoluciones</a></li>
         <li><a href="#">Preguntas frecuentes</a></li>
-        <li><a href="#">Contacto</a></li>
+        <li><a href="contacto.html">Contacto</a></li>
       </ul>
     </div>
     <div class="footer-col">

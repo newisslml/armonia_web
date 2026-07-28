@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biblioteca Zen — Armonía</title>
-<meta name="description" content="Biblioteca Zen: libros de tarot, meditación y astrología. Envíos a todo Chile.">
+<title>Carrito — Armonía</title>
+<meta name="description" content="Tu carrito de compras en Armonía.">
 <script>
 (function () {
   var t = localStorage.getItem('armonia-theme');
@@ -57,7 +57,7 @@
     <ul class="container">
       <li><a href="categoria-hogar-zen.html">Protección Hogar Zen</a></li>
       <li><a href="categoria-rituales-terapias.html">Rituales y Terapias</a></li>
-      <li><a href="categoria-biblioteca-zen.html" class="active">Biblioteca Zen</a></li>
+      <li><a href="categoria-biblioteca-zen.html">Biblioteca Zen</a></li>
       <li><a href="categoria-proteccion-personal.html">Protección Personal Zen</a></li>
       <li><a href="categoria-kits-cajas.html">Kits y Cajas</a></li>
       <li><a href="categoria-amuletos-mundo.html">Amuletos del Mundo</a></li>
@@ -67,33 +67,30 @@
 </header>
 
 <main>
-
   <section class="cat-page-head">
     <div class="container">
-      <h1>Biblioteca Zen</h1>
-      <p class="cat-page-sub">Libros y guías para profundizar en tu camino espiritual.</p>
+      <h1>Tu carrito</h1>
     </div>
   </section>
 
   <section class="cat-page">
-    <div class="container">
-      <div class="cat-page-toolbar">
-        <p class="result-count" id="resultCount">Cargando productos…</p>
-        <label class="sort-select">
-          Ordenar por
-          <select>
-            <option>Más vendidos</option>
-            <option>Precio: menor a mayor</option>
-            <option>Precio: mayor a menor</option>
-            <option>Novedades</option>
-          </select>
-        </label>
-      </div>
+    <div class="container cart-container">
+      <div id="cartItems" class="cart-items"><p class="cat-empty">Cargando…</p></div>
 
-      <div class="prod-grid" id="prodGrid" data-categoria="biblioteca-zen"></div>
+      <div id="cartSummary" class="cart-summary" hidden>
+        <div class="cart-total">
+          <span>Total</span>
+          <strong id="cartTotal"></strong>
+        </div>
+        <label class="cart-direccion">
+          Dirección de envío
+          <input type="text" id="direccionEnvio" placeholder="Calle 123, comuna, ciudad">
+        </label>
+        <button id="checkoutBtn" class="btn btn-primary">Ir a pagar</button>
+        <p class="form-msg" id="checkoutMsg"></p>
+      </div>
     </div>
   </section>
-
 </main>
 
 <footer class="site-footer">
@@ -144,5 +141,112 @@
 </footer>
 
 <script src="js/main.js"></script>
+<script>
+  function filaItem(item) {
+    const p = item.producto;
+    return `
+    <div class="cart-item" data-item-id="${item.id}">
+      <div class="cart-item-img">✦</div>
+      <div class="cart-item-info">
+        <h3>${p.nombre}</h3>
+        <p class="prod-price">${formatCLP(p.precio)}</p>
+      </div>
+      <input type="number" min="1" value="${item.cantidad}" class="cart-qty" data-item-id="${item.id}" aria-label="Cantidad">
+      <button class="cart-remove" data-item-id="${item.id}" aria-label="Quitar del carrito">✕</button>
+    </div>`;
+  }
+
+  async function cargarCarrito() {
+    const cont = document.getElementById('cartItems');
+    const summary = document.getElementById('cartSummary');
+    try {
+      const carrito = await apiFetch('/carrito');
+      const items = carrito.items || [];
+      if (!items.length) {
+        cont.innerHTML = '<p class="cat-empty">Tu carrito está vacío. <a href="index.html">Ver catálogo</a></p>';
+        summary.hidden = true;
+        return;
+      }
+      cont.innerHTML = items.map(filaItem).join('');
+      const total = items.reduce((s, it) => s + Number(it.producto.precio) * it.cantidad, 0);
+      document.getElementById('cartTotal').textContent = formatCLP(total);
+      summary.hidden = false;
+    } catch {
+      cont.innerHTML = '<p class="cat-empty">No pudimos cargar tu carrito.</p>';
+    }
+  }
+  cargarCarrito();
+
+  document.getElementById('cartItems').addEventListener('change', async (e) => {
+    if (!e.target.classList.contains('cart-qty')) return;
+    const id = e.target.dataset.itemId;
+    const cantidad = Math.max(1, Number(e.target.value) || 1);
+    try {
+      await apiFetch(`/carrito/items/${id}`, { method: 'PATCH', body: JSON.stringify({ cantidad }) });
+      refreshCartCount();
+    } catch (err) {
+      alert(err.message);
+    }
+    cargarCarrito();
+  });
+
+  document.getElementById('cartItems').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.cart-remove');
+    if (!btn) return;
+    try {
+      await apiFetch(`/carrito/items/${btn.dataset.itemId}`, { method: 'DELETE' });
+      refreshCartCount();
+    } catch (err) {
+      alert(err.message);
+    }
+    cargarCarrito();
+  });
+
+  function irAWebpay(url, token) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'token_ws';
+    input.value = token;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  document.getElementById('checkoutBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('checkoutMsg');
+    const btn = document.getElementById('checkoutBtn');
+    const direccionEnvio = document.getElementById('direccionEnvio').value.trim();
+    msg.textContent = '';
+
+    if (!direccionEnvio) {
+      msg.textContent = 'Ingresa una dirección de envío.';
+      return;
+    }
+
+    try {
+      await apiFetch('/auth/me');
+    } catch {
+      msg.textContent = 'Debes iniciar sesión para pagar. Redirigiendo…';
+      setTimeout(() => (location.href = 'mi-cuenta.html'), 1200);
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      const pedido = await apiFetch('/pedidos', { method: 'POST', body: JSON.stringify({ direccionEnvio }) });
+      const pago = await apiFetch('/pagos/webpay/iniciar', {
+        method: 'POST',
+        body: JSON.stringify({ pedidoId: pedido.id, returnUrl: `${location.origin}/pago-retorno.html` }),
+      });
+      irAWebpay(pago.url, pago.token);
+    } catch (err) {
+      msg.textContent = err.message;
+      btn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>

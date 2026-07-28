@@ -58,6 +58,7 @@ const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 function setTheme(mode) {
   root.setAttribute('data-theme', mode);
+  root.style.colorScheme = mode;
   localStorage.setItem('armonia-theme', mode);
   stars.setActive(mode === 'dark');
 }
@@ -73,52 +74,120 @@ const menuToggle = document.getElementById('menuToggle');
 const mainNav = document.getElementById('mainNav');
 menuToggle.addEventListener('click', () => mainNav.classList.toggle('open'));
 
-// ---- Newsletter ----
+// ---- API ----
 // Backend real (ver ../Vault-Front/CONEXION_FRONTEND.md): cookies httpOnly,
-// usar siempre credentials:'include'.
+// SIEMPRE credentials:'include'.
 const API_BASE = 'http://localhost:4000/api';
+const formatCLP = (n) => '$' + Number(n).toLocaleString('es-CL');
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
+    headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+    ...options,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error de conexión con el servidor');
+  return data;
+}
+
+// ---- Carrito: contador en el header ----
+async function refreshCartCount() {
+  try {
+    const carrito = await apiFetch('/carrito');
+    const total = (carrito.items || []).reduce((sum, it) => sum + it.cantidad, 0);
+    document.querySelectorAll('.cart-count').forEach((el) => (el.textContent = total));
+  } catch {
+    // backend no disponible: se deja el contador tal cual está en el HTML
+  }
+}
+refreshCartCount();
+
+async function addToCart(productoId, btn) {
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  try {
+    await apiFetch('/carrito/items', {
+      method: 'POST',
+      body: JSON.stringify({ productoId, cantidad: 1 }),
+    });
+    btn.textContent = 'Agregado ✓';
+    refreshCartCount();
+  } catch (err) {
+    btn.textContent = 'Error';
+    console.error(err);
+  } finally {
+    setTimeout(() => {
+      btn.textContent = textoOriginal;
+      btn.disabled = false;
+    }, 1500);
+  }
+}
+
+// ---- Newsletter ----
 const form = document.getElementById('newsletterForm');
 const msg = document.getElementById('newsletterMsg');
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = form.querySelector('input[type="email"]').value;
-  try {
-    const res = await fetch(`${API_BASE}/newsletter`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Error');
-    msg.textContent = '¡Gracias por suscribirte! Revisa tu correo para confirmar.';
-    form.reset();
-  } catch {
-    msg.textContent = 'No pudimos conectar con el servidor. Intenta más tarde.';
-  }
-});
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.querySelector('input[type="email"]').value;
+    try {
+      await apiFetch('/newsletter', { method: 'POST', body: JSON.stringify({ email }) });
+      msg.textContent = '¡Gracias por suscribirte! Revisa tu correo para confirmar.';
+      form.reset();
+    } catch {
+      msg.textContent = 'No pudimos conectar con el servidor. Intenta más tarde.';
+    }
+  });
+}
 
-// ---- Productos destacados (desde la API, si está disponible) ----
+// ---- Grillas de productos (destacados en home, catálogo en categorías) ----
+function renderProductGrid(gridEl, productos) {
+  gridEl.innerHTML = productos
+    .map(
+      (p) => `
+    <article class="prod-card">
+      <div class="prod-img">✦</div>
+      ${p.destacado ? '<span class="prod-badge">Destacado</span>' : ''}
+      <h3>${p.nombre}</h3>
+      <p class="prod-price">${formatCLP(p.precio)}</p>
+      <button class="btn btn-primary btn-sm" data-id="${p.id}">Agregar</button>
+    </article>`
+    )
+    .join('');
+
+  gridEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-id]');
+    if (btn) addToCart(Number(btn.dataset.id), btn);
+  });
+}
+
 const destacadosGrid = document.getElementById('destacadosGrid');
 if (destacadosGrid) {
-  fetch(`${API_BASE}/productos?destacado=true`, { credentials: 'include' })
-    .then((res) => (res.ok ? res.json() : Promise.reject()))
+  apiFetch('/productos?destacado=true')
     .then(({ productos }) => {
-      if (!productos || !productos.length) return;
-      const formatCLP = (n) => '$' + Number(n).toLocaleString('es-CL');
-      destacadosGrid.innerHTML = productos
-        .map(
-          (p) => `
-        <article class="prod-card">
-          <div class="prod-img">✦</div>
-          <h3>${p.nombre}</h3>
-          <p class="prod-price">${formatCLP(p.precio)}</p>
-          <button class="btn btn-primary btn-sm">Agregar</button>
-        </article>`
-        )
-        .join('');
+      if (productos && productos.length) renderProductGrid(destacadosGrid, productos);
     })
     .catch(() => {
       // backend no disponible: se mantienen los productos de ejemplo del HTML
+    });
+}
+
+const catGrid = document.getElementById('prodGrid');
+if (catGrid) {
+  const categoriaSlug = catGrid.dataset.categoria;
+  const resultCount = document.getElementById('resultCount');
+  apiFetch(`/productos?categoria=${categoriaSlug}`)
+    .then(({ productos }) => {
+      if (!productos || !productos.length) {
+        catGrid.innerHTML = '<p class="cat-empty">Todavía no hay productos cargados en esta categoría.</p>';
+        if (resultCount) resultCount.textContent = '0 productos';
+        return;
+      }
+      renderProductGrid(catGrid, productos);
+      if (resultCount) resultCount.textContent = `${productos.length} producto${productos.length === 1 ? '' : 's'}`;
+    })
+    .catch(() => {
+      catGrid.innerHTML = '<p class="cat-empty">No pudimos conectar con el servidor. Intenta más tarde.</p>';
     });
 }
