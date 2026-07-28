@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultado del pago — Armonía</title>
+<script>
+(function () {
+  var t = localStorage.getItem('armonia-theme');
+  if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var root = document.documentElement;
+  root.setAttribute('data-theme', t);
+  root.style.colorScheme = t;
+  root.style.backgroundColor = t === 'dark' ? '#0a0a1a' : '#faf6f0';
+})();
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="logo">
+      <img src="img/logo.png" alt="Armonía" class="logo-img">
+    </a>
+    <div class="search-bar">
+      <input type="search" placeholder="Buscar amuletos, sahumerios, kits…" aria-label="Buscar productos">
+      <button aria-label="Buscar">
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Cambiar tema">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><g stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></g></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a href="mi-cuenta.html" class="icon-btn" aria-label="Mi cuenta">
+        <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </a>
+      <a href="carrito.html" class="icon-btn cart-btn" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 4h2l2.4 12.4a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L20 8H6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="21" r="1.4" fill="currentColor"/><circle cx="18" cy="21" r="1.4" fill="currentColor"/></svg>
+        <span class="cart-count">0</span>
+      </a>
+    </div>
+  </div>
+  <nav class="main-nav" id="mainNav">
+    <ul class="container">
+      <li><a href="categoria-hogar-zen.html">Protección Hogar Zen</a></li>
+      <li><a href="categoria-rituales-terapias.html">Rituales y Terapias</a></li>
+      <li><a href="categoria-biblioteca-zen.html">Biblioteca Zen</a></li>
+      <li><a href="categoria-proteccion-personal.html">Protección Personal Zen</a></li>
+      <li><a href="categoria-kits-cajas.html">Kits y Cajas</a></li>
+      <li><a href="categoria-amuletos-mundo.html">Amuletos del Mundo</a></li>
+      <li><a href="contacto.html">Contacto</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <section class="cat-page-head">
+    <div class="container">
+      <h1>Resultado del pago</h1>
+    </div>
+  </section>
+  <section class="cat-page">
+    <div class="container" style="max-width:480px">
+      <div id="pagoResultado"><p class="cat-empty">Verificando pago…</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <p>© 2026 Armonía. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  async function confirmarPago(token) {
+    const cont = document.getElementById('pagoResultado');
+    try {
+      const data = await apiFetch('/pagos/webpay/confirmar', {
+        method: 'POST',
+        body: JSON.stringify({ token_ws: token }),
+      });
+      cont.innerHTML = data.aprobado
+        ? '<p>✅ Pago aprobado. Gracias por tu compra.</p><a class="btn btn-primary" href="mi-cuenta.html">Ver mis pedidos</a>'
+        : '<p>❌ Pago rechazado.</p><a class="btn btn-ghost" href="carrito.html">Volver al carrito</a>';
+    } catch (err) {
+      cont.innerHTML = `<p class="cat-empty">${err.message}</p>`;
+    }
+  }
+
+  const params = new URLSearchParams(location.search);
+  const token = params.get('token_ws');
+
+  if (token) {
+    confirmarPago(token);
+  } else {
+    // Transbank confirma con un POST al returnUrl, y una página estática no
+    // puede leer el body de un POST — se necesita un endpoint del backend
+    // que reciba ese POST y redirija acá con el token como query, o similar.
+    // Mientras tanto: permite pegarlo a mano para poder probar el flujo en sandbox.
+    document.getElementById('pagoResultado').innerHTML = `
+      <p class="cat-empty">No encontramos el token en la URL. Transbank normalmente lo envía por POST, que esta página estática no puede leer — hace falta un endpoint del backend para recibirlo y redirigir acá. Si estás probando en sandbox, pega el token_ws manualmente:</p>
+      <form id="tokenForm" class="auth-form">
+        <input type="text" name="token_ws" placeholder="token_ws" required>
+        <button class="btn btn-primary" type="submit">Confirmar</button>
+      </form>`;
+    document.getElementById('tokenForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      confirmarPago(new FormData(e.target).get('token_ws'));
+    });
+  }
+</script>
+</body>
+</html>
