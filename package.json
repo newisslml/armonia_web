@@ -1,0 +1,40 @@
+{
+  "name": "armonia-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "dev": "nodemon backend/src/server.js",
+    "start": "node backend/src/server.js",
+    "prisma:migrate": "prisma migrate dev --schema=backend/prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=backend/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=backend/prisma/schema.prisma",
+    "seed": "node backend/prisma/seed.js",
+    "lint": "eslint backend/src",
+    "format:check": "prettier --check backend/src",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
+    "transbank-sdk": "^6.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^8.57.1",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.9.6",
+    "prisma": "^5.20.0",
+    "vitest": "^4.1.10"
+  }
+}
