@@ -22,6 +22,12 @@ pipeline {
           env.HAS_BACKEND = fileExists('backend/package.json') ? 'true' : 'false'
           env.HAS_FRONTEND = fileExists('frontend/package.json') ? 'true' : 'false'
           echo "backend/package.json: ${env.HAS_BACKEND} | frontend/package.json: ${env.HAS_FRONTEND}"
+
+          def paths = []
+          if (fileExists('backend')) { paths << 'backend' }
+          if (fileExists('frontend')) { paths << 'frontend' }
+          if (paths.isEmpty()) { paths << '.' }
+          env.SCAN_PATHS = paths.join(' ')
         }
       }
     }
@@ -98,15 +104,16 @@ pipeline {
 
     stage('Security: SAST (semgrep)') {
       steps {
-        script {
-          def paths = []
-          if (env.HAS_BACKEND == 'true' || fileExists('backend')) { paths << 'backend' }
-          if (fileExists('frontend')) { paths << 'frontend' }
-          if (paths.isEmpty()) { paths << '.' }
-          // auto = reglas OWASP genericas; handbook.yml = reglas propias del handbook
-          // severity ERROR/WARNING bloquean el build; INFO (ej console.log) solo se reporta
-          sh "semgrep --config auto --config .semgrep/handbook.yml --severity ERROR --severity WARNING --error ${paths.join(' ')}"
-        }
+        // reglas genericas OWASP/comunidad, nada del handbook todavia
+        sh "semgrep --config auto --severity ERROR --severity WARNING --error ${env.SCAN_PATHS}"
+      }
+    }
+
+    stage('Handbook Compliance') {
+      steps {
+        // reglas propias del handbook, separadas del SAST generico
+        // para que se vea aparte en el reporte
+        sh "semgrep --config .semgrep/handbook.yml --severity ERROR --severity WARNING --error ${env.SCAN_PATHS}"
       }
     }
   }
