@@ -12,7 +12,6 @@ pipeline {
 
   environment {
     DATABASE_URL = "postgresql://ci:${POSTGRES_TEST_PASSWORD}@postgres-test:5432/ci_test?schema=b${BUILD_NUMBER}"
-    DISCORD_WEBHOOK = credentials('discord-webhook-url')
     POSTGRES_TEST_PASSWORD = credentials('postgres-test-password')
   }
 
@@ -131,7 +130,16 @@ pipeline {
           ]]
         ])
         writeFile file: 'discord_payload.json', text: payload
-        sh 'curl -sf -H "Content-Type: application/json" -X POST -d @discord_payload.json "$DISCORD_WEBHOOK"'
+
+        // credencial 'discord-webhook-url' opcional: si no esta cargada aun,
+        // solo se saltea el aviso en vez de tumbar el build entero
+        try {
+          withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK')]) {
+            sh 'curl -sf -H "Content-Type: application/json" -X POST -d @discord_payload.json "$DISCORD_WEBHOOK"'
+          }
+        } catch (e) {
+          echo "Aviso Discord salteado: ${e.message}"
+        }
       }
       cleanWs()
     }
