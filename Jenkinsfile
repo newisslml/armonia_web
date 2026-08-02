@@ -247,7 +247,7 @@ PIPELINE REPORT — ${statusIcon} ${status}
 
 ${stageLines}${failureBlock}
 
-[Ver build #${env.BUILD_NUMBER} en Jenkins](${env.BUILD_URL})"""
+🔗 Ver build #${env.BUILD_NUMBER} en Jenkins: ${env.BUILD_URL}"""
 
         def payload = groovy.json.JsonOutput.toJson([
           embeds: [[
