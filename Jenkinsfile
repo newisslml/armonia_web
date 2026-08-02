@@ -19,9 +19,13 @@ pipeline {
     stage('Detectar estructura') {
       steps {
         script {
-          env.HAS_BACKEND = fileExists('backend/package.json') ? 'true' : 'false'
+          // backend: package.json quedo en la raiz del repo (no en backend/),
+          // usa npm (package-lock.json), mientras que backend/src y
+          // backend/prisma siguen donde estaban. frontend sigue con pnpm
+          // en su propia carpeta.
+          env.HAS_BACKEND = fileExists('package.json') ? 'true' : 'false'
           env.HAS_FRONTEND = fileExists('frontend/package.json') ? 'true' : 'false'
-          echo "backend/package.json: ${env.HAS_BACKEND} | frontend/package.json: ${env.HAS_FRONTEND}"
+          echo "package.json (backend, raiz): ${env.HAS_BACKEND} | frontend/package.json: ${env.HAS_FRONTEND}"
 
           def paths = []
           if (fileExists('backend')) { paths << 'backend' }
@@ -35,46 +39,40 @@ pipeline {
     stage('Backend: install') {
       when { environment name: 'HAS_BACKEND', value: 'true' }
       steps {
-        dir('backend') {
-          sh 'pnpm install --frozen-lockfile'
-        }
+        sh 'npm ci'
       }
     }
 
     stage('Backend: prisma') {
       when { environment name: 'HAS_BACKEND', value: 'true' }
       steps {
-        dir('backend') {
-          sh 'pnpm exec prisma generate'
-          sh 'pnpm exec prisma migrate deploy'
-        }
+        sh 'npx prisma generate --schema=backend/prisma/schema.prisma'
+        sh 'npx prisma migrate deploy --schema=backend/prisma/schema.prisma'
       }
     }
 
     stage('Backend: lint') {
       when { environment name: 'HAS_BACKEND', value: 'true' }
       steps {
-        dir('backend') {
-          sh 'pnpm exec eslint . --max-warnings=0'
-        }
+        sh 'npx eslint backend --max-warnings=0'
       }
     }
 
     stage('Backend: format check') {
       when { environment name: 'HAS_BACKEND', value: 'true' }
       steps {
-        dir('backend') {
-          sh 'pnpm exec prettier --check .'
-        }
+        sh 'npx prettier --check backend'
       }
     }
 
     stage('Backend: tests + coverage') {
       when { environment name: 'HAS_BACKEND', value: 'true' }
       steps {
-        dir('backend') {
-          sh 'pnpm exec vitest run --coverage'
-        }
+        sh 'npx vitest run --coverage'
+        // coverage-summary.json (reporter json-summary) es lo que compara
+        // el stage de Coverage Reconciliation; si el proyecto todavia no
+        // tiene ese reporter configurado, no se genera y se saltea sin fallar
+        archiveArtifacts artifacts: 'coverage/coverage-summary.json', allowEmptyArchive: true, fingerprint: false
       }
     }
 
@@ -92,6 +90,51 @@ pipeline {
       steps {
         dir('frontend') {
           sh 'pnpm exec vitest run --coverage'
+        }
+        archiveArtifacts artifacts: 'frontend/coverage/coverage-summary.json', allowEmptyArchive: true, fingerprint: false
+      }
+    }
+
+    stage('Coverage Reconciliation') {
+      // solo tiene sentido en PRs: compara contra el ultimo build ok de dev.
+      // en dev mismo, el archiveArtifacts de arriba ya deja el baseline
+      // listo para la proxima PR.
+      when { expression { env.CHANGE_ID != null } }
+      steps {
+        script {
+          copyArtifacts(
+            projectName: 'armonia_web/dev',
+            selector: lastSuccessful(),
+            filter: 'coverage/coverage-summary.json,frontend/coverage/coverage-summary.json',
+            target: 'baseline',
+            optional: true
+          )
+
+          def check = { label, currentPath, baselinePath ->
+            if (!fileExists(currentPath)) { return }
+            if (!fileExists(baselinePath)) {
+              echo "${label}: sin baseline todavia (primer build con coverage), no se compara."
+              return
+            }
+            def result = sh(
+              script: """
+                python3 -c "
+import json, sys
+cur = json.load(open('${currentPath}'))['total']['lines']['pct']
+base = json.load(open('${baselinePath}'))['total']['lines']['pct']
+print(f'${label}: actual={cur}% baseline={base}%')
+sys.exit(1 if cur < base else 0)
+"
+              """,
+              returnStatus: true
+            )
+            if (result != 0) {
+              error("${label}: coverage bajo respecto a dev (ver log arriba)")
+            }
+          }
+
+          check('backend', 'coverage/coverage-summary.json', 'baseline/coverage/coverage-summary.json')
+          check('frontend', 'frontend/coverage/coverage-summary.json', 'baseline/frontend/coverage/coverage-summary.json')
         }
       }
     }
