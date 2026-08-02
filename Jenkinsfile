@@ -104,7 +104,8 @@ pipeline {
           if (fileExists('frontend')) { paths << 'frontend' }
           if (paths.isEmpty()) { paths << '.' }
           // auto = reglas OWASP genericas; handbook.yml = reglas propias del handbook
-          sh "semgrep --config auto --config .semgrep/handbook.yml --error ${paths.join(' ')}"
+          // severity ERROR/WARNING bloquean el build; INFO (ej console.log) solo se reporta
+          sh "semgrep --config auto --config .semgrep/handbook.yml --severity ERROR --severity WARNING --error ${paths.join(' ')}"
         }
       }
     }

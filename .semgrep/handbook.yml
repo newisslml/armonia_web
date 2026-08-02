@@ -52,8 +52,8 @@ rules:
       origenes especificos via CORS_ALLOWED_ORIGINS.
     patterns:
       - pattern-either:
-          - pattern: cors({ origin: "*", ... })
-          - pattern: cors({ origin: "*" })
+          - pattern: 'cors({ origin: "*", ... })'
+          - pattern: 'cors({ origin: "*" })'
 
   - id: console-log-left-in
     languages: [javascript, typescript]
