@@ -1,0 +1,66 @@
+rules:
+  - id: hardcoded-secret-assignment
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >
+      Posible secret hardcodeado (handbook 04_SECURITY_GUIDELINES: Secret Management).
+      Usar variable de entorno / Jenkins credentials, nunca literal en codigo.
+    patterns:
+      - pattern-either:
+          - pattern: const $VAR = "..."
+          - pattern: let $VAR = "..."
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i)(secret|password|apikey|api_key|token|jwt_secret|private_key)
+
+  - id: prisma-raw-query-interpolation
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >
+      $queryRawUnsafe/$executeRawUnsafe con template string interpolado = SQL injection
+      (handbook 04: SQL Injection Prevention). Usar $queryRaw con tagged template o parametros.
+    patterns:
+      - pattern-either:
+          - pattern: prisma.$queryRawUnsafe(`...${$X}...`)
+          - pattern: prisma.$executeRawUnsafe(`...${$X}...`)
+
+  - id: eval-or-function-constructor
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "eval()/new Function() con input dinamico = code injection (handbook 04)."
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+
+  - id: child-process-shell-true
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >
+      exec/spawn con shell interpolado = command injection (handbook 04: Command Injection
+      Prevention). Usar execFile/spawn con array de argumentos, shell:false.
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec(`...${$X}...`, ...)
+          - pattern: $CP.exec(`...${$X}...`, ...)
+
+  - id: cors-wildcard-origin
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >
+      CORS con origin "*" (handbook 04: Security Misconfiguration). Restringir a
+      origenes especificos via CORS_ALLOWED_ORIGINS.
+    patterns:
+      - pattern-either:
+          - pattern: cors({ origin: "*", ... })
+          - pattern: cors({ origin: "*" })
+
+  - id: console-log-left-in
+    languages: [javascript, typescript]
+    severity: INFO
+    message: "console.log en codigo de produccion (handbook 02: no console.log)."
+    pattern: console.log(...)
+    paths:
+      exclude:
+        - "**/*.test.js"
+        - "**/*.spec.js"
