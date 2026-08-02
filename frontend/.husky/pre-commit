@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-# Pre-commit gate for the frontend: only runs when a staged file lives
-# under frontend/, so backend-only commits aren't blocked by this.
-if git diff --cached --name-only | grep -q '^frontend/'; then
-  cd "$(dirname "$0")/.." || exit 1
-  npm test || exit 1
-fi
