@@ -34,12 +34,14 @@ async function crearProducto(req, res) {
 async function actualizarProducto(req, res) {
   const id = Number(req.params.id);
   const datos = productoSchema.partial().parse(req.body);
-  const producto = await prisma.producto.update({
-    where: { id },
-    data: { ...datos, ...(datos.nombre ? { slug: slugify(datos.nombre) } : {}) },
-  }).catch(() => {
-    throw new ApiError(404, 'Producto no encontrado');
-  });
+  const producto = await prisma.producto
+    .update({
+      where: { id },
+      data: { ...datos, ...(datos.nombre ? { slug: slugify(datos.nombre) } : {}) },
+    })
+    .catch(() => {
+      throw new ApiError(404, 'Producto no encontrado');
+    });
   res.json(producto);
 }
 
@@ -55,12 +57,14 @@ async function subirImagenProducto(req, res) {
   const id = Number(req.params.id);
   if (!req.file) throw new ApiError(400, 'Falta el archivo de imagen');
 
-  const producto = await prisma.producto.update({
-    where: { id },
-    data: { imagenUrl: `/uploads/${req.file.filename}` },
-  }).catch(() => {
-    throw new ApiError(404, 'Producto no encontrado');
-  });
+  const producto = await prisma.producto
+    .update({
+      where: { id },
+      data: { imagenUrl: `/uploads/${req.file.filename}` },
+    })
+    .catch(() => {
+      throw new ApiError(404, 'Producto no encontrado');
+    });
   res.json(producto);
 }
 
@@ -77,12 +81,14 @@ async function crearCategoria(req, res) {
 async function actualizarCategoria(req, res) {
   const id = Number(req.params.id);
   const datos = categoriaSchema.partial().parse(req.body);
-  const categoria = await prisma.categoria.update({
-    where: { id },
-    data: { ...datos, ...(datos.nombre ? { slug: slugify(datos.nombre) } : {}) },
-  }).catch(() => {
-    throw new ApiError(404, 'Categoria no encontrada');
-  });
+  const categoria = await prisma.categoria
+    .update({
+      where: { id },
+      data: { ...datos, ...(datos.nombre ? { slug: slugify(datos.nombre) } : {}) },
+    })
+    .catch(() => {
+      throw new ApiError(404, 'Categoria no encontrada');
+    });
   res.json(categoria);
 }
 
@@ -98,7 +104,11 @@ async function eliminarCategoria(req, res) {
 
 async function listarPedidos(req, res) {
   const pedidos = await prisma.pedido.findMany({
-    include: { items: true, pago: true, usuario: { select: { id: true, email: true, nombre: true } } },
+    include: {
+      items: true,
+      pago: true,
+      usuario: { select: { id: true, email: true, nombre: true } },
+    },
     orderBy: { creadoEn: 'desc' },
   });
   res.json(pedidos);

@@ -12,7 +12,8 @@ async function iniciar(req, res) {
   const datos = iniciarSchema.parse(req.body);
 
   const pedido = await prisma.pedido.findUnique({ where: { id: datos.pedidoId } });
-  if (!pedido || pedido.usuarioId !== req.usuario.id) throw new ApiError(404, 'Pedido no encontrado');
+  if (!pedido || pedido.usuarioId !== req.usuario.id)
+    throw new ApiError(404, 'Pedido no encontrado');
   if (pedido.estado !== 'pendiente') throw new ApiError(409, 'El pedido ya fue procesado');
 
   const buyOrder = `pedido-${pedido.id}`;

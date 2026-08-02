@@ -16,9 +16,7 @@ async function listar(req, res) {
   const where = {
     ...(q.categoria ? { categoria: { slug: q.categoria } } : {}),
     ...(q.destacado ? { destacado: q.destacado === 'true' } : {}),
-    ...(q.busqueda
-      ? { nombre: { contains: q.busqueda, mode: 'insensitive' } }
-      : {}),
+    ...(q.busqueda ? { nombre: { contains: q.busqueda, mode: 'insensitive' } } : {}),
   };
 
   const [productos, total] = await Promise.all([

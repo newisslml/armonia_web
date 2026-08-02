@@ -63,7 +63,8 @@ async function detalle(req, res) {
     where: { id: Number(req.params.id) },
     include: { items: { include: { producto: true } }, pago: true },
   });
-  if (!pedido || pedido.usuarioId !== req.usuario.id) throw new ApiError(404, 'Pedido no encontrado');
+  if (!pedido || pedido.usuarioId !== req.usuario.id)
+    throw new ApiError(404, 'Pedido no encontrado');
   res.json(pedido);
 }
 

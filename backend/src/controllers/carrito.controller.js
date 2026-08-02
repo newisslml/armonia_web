@@ -30,7 +30,10 @@ async function agregarItem(req, res) {
     update: { cantidad: { increment: datos.cantidad } },
   });
 
-  const actualizado = await prisma.carrito.findUnique({ where: { id: carrito.id }, include: INCLUDE_ITEMS });
+  const actualizado = await prisma.carrito.findUnique({
+    where: { id: carrito.id },
+    include: INCLUDE_ITEMS,
+  });
   res.status(201).json(actualizado);
 }
 
@@ -44,7 +47,10 @@ async function actualizarItem(req, res) {
 
   await prisma.carritoItem.update({ where: { id: itemId }, data: { cantidad: datos.cantidad } });
 
-  const actualizado = await prisma.carrito.findUnique({ where: { id: carrito.id }, include: INCLUDE_ITEMS });
+  const actualizado = await prisma.carrito.findUnique({
+    where: { id: carrito.id },
+    include: INCLUDE_ITEMS,
+  });
   res.json(actualizado);
 }
 
@@ -57,7 +63,10 @@ async function eliminarItem(req, res) {
 
   await prisma.carritoItem.delete({ where: { id: itemId } });
 
-  const actualizado = await prisma.carrito.findUnique({ where: { id: carrito.id }, include: INCLUDE_ITEMS });
+  const actualizado = await prisma.carrito.findUnique({
+    where: { id: carrito.id },
+    include: INCLUDE_ITEMS,
+  });
   res.json(actualizado);
 }
 

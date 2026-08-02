@@ -9,7 +9,8 @@ const {
 function construirOpciones() {
   const commerceCode = process.env.TBK_COMMERCE_CODE || IntegrationCommerceCodes.WEBPAY_PLUS;
   const apiKey = process.env.TBK_API_KEY || IntegrationApiKeys.WEBPAY;
-  const environment = process.env.TBK_ENVIRONMENT === 'production' ? Environment.Production : Environment.Integration;
+  const environment =
+    process.env.TBK_ENVIRONMENT === 'production' ? Environment.Production : Environment.Integration;
   return new Options(commerceCode, apiKey, environment);
 }
 

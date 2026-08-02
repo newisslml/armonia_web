@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 function emitirSesion(res, usuario) {
-  const token = firmarToken({ id: usuario.id, email: usuario.email, rol: usuario.rol });
+  const token = firmarToken({ id: usuario.id, rol: usuario.rol });
   res.cookie('token', token, { ...COOKIE_OPTS, maxAge: 1000 * 60 * 60 * 24 * 7 });
 }
 
