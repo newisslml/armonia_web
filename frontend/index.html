@@ -28,6 +28,10 @@
       </span>
       <span id="theme-label">Oscuro</span>
     </button>
+    <button id="cart-toggle" class="pill pill--nav cart-toggle" type="button" aria-label="Ver carrito">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span id="cart-count" class="cart-toggle__count">0</span>
+    </button>
     <a href="#productos" class="btn-buy">Comprar ahora</a>
   </div>
 </nav>
@@ -170,6 +174,26 @@
   </div>
 </footer>
 <div class="footer__bottom">© 2026 Armonía Chile — Todos los derechos reservados</div>
+
+<!-- MODAL: DETALLE PRODUCTO -->
+<dialog id="product-modal" class="product-modal">
+  <button type="button" class="modal-close" id="product-modal-close" aria-label="Cerrar">✕</button>
+  <div id="product-modal-content"></div>
+</dialog>
+
+<!-- MODAL: CARRITO -->
+<dialog id="cart-modal" class="cart-modal">
+  <button type="button" class="modal-close" id="cart-modal-close" aria-label="Cerrar">✕</button>
+  <h3>Tu carrito</h3>
+  <div id="cart-items" class="cart-items"></div>
+  <div class="cart-total">
+    <span>Total</span>
+    <span id="cart-total-value">$0</span>
+  </div>
+  <button type="button" class="pill pill--solid cart-checkout" id="cart-checkout" disabled>Ir a pagar</button>
+</dialog>
+
+<div id="toast" class="toast" popover="manual" role="status" aria-live="polite"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

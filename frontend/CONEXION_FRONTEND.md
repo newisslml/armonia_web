@@ -11,7 +11,7 @@ para quien conecte los endpoints:
 | Categorías (`#categorias`) | `.cat-card` (6) | Listar categorías reales (nombre, slug/href, imagen) desde `GET /categorias`. Hoy son estáticas con `href="#"`. |
 | Productos destacados (`#productos`) | `.prod-card` (4) | Traer productos destacados desde `GET /productos?destacado=true` (o similar). Hoy son estáticos. |
 | Newsletter | `#newsletter-form` (`js/main.js`) | `fetch` a `POST /newsletter` con `{ email }`. Hoy solo valida formato y muestra un mensaje fijo (ver `main.js`, bloque `newsletter-form`). |
-| "Comprar ahora" / CTAs de producto | `.btn-buy`, `.prod-card` | No hay carrito ni checkout implementado en esta pasada — futuro `POST /carrito`, integración de pago (Transbank u otro). |
+| "Comprar ahora" / CTAs de producto | `.btn-buy`, `.prod-card` | Carrito implementado en frontend puro (`js/cart.js`, `localStorage`, sin backend). Falta: checkout real, `POST /carrito`, integración de pago (Transbank u otro). |
 | Nav "Visítanos" → mapa | `.ubicacion__map` | Placeholder visual; reemplazar por imagen real o embed de mapa. |
 
 ## Imágenes
