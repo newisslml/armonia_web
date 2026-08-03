@@ -1,8 +1,11 @@
 /Vault-Front/
-/frontend/
 /design_handoff_armonia_redesign/
 node_modules/
 coverage/
 .env
 backend/uploads/*
 !backend/uploads/.gitkeep
+/backend/
+backend/node_modules/
+backend/uploads/
+backend/.env
