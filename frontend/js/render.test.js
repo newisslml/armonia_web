@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { catCard, prodCard, renderList, renderError } from './render.js';
+import { catCard, prodCard, productModalBody, cartRow, renderList, renderError } from './render.js';
 
 const API = 'http://localhost:4000';
 
@@ -31,6 +31,43 @@ describe('prodCard', () => {
     const img = el.querySelector('img');
     expect(img.src).toBe('http://localhost:4000/uploads/difusor.jpg');
     expect(img.alt).toBe('Difusor');
+  });
+});
+
+describe('productModalBody', () => {
+  it('shows the placeholder slot and default description when data is missing', () => {
+    const el = productModalBody(API, { nombre: 'Sahumerio', precio: '3990', imagenUrl: null, descripcion: null });
+    expect(el.querySelector('.img-slot').textContent).toBe('Sahumerio');
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.querySelector('h3').textContent).toBe('Sahumerio');
+    expect(el.querySelector('.product-modal__price').textContent).toBe('$3.990');
+    expect(el.querySelector('.product-modal__desc').textContent).toBe('Sin descripción disponible por ahora.');
+  });
+
+  it('renders an <img> and the description when provided', () => {
+    const el = productModalBody(API, {
+      id: 7,
+      nombre: 'Cuarzo rosa',
+      precio: '12990',
+      imagenUrl: '/uploads/cuarzo.jpg',
+      descripcion: 'Piedra del amor propio.',
+    });
+    const img = el.querySelector('img');
+    expect(img.src).toBe('http://localhost:4000/uploads/cuarzo.jpg');
+    expect(img.alt).toBe('Cuarzo rosa');
+    expect(el.querySelector('.product-modal__desc').textContent).toBe('Piedra del amor propio.');
+    expect(el.querySelector('[data-add-to-cart]').dataset.addToCart).toBe('7');
+  });
+});
+
+describe('cartRow', () => {
+  it('renders name, quantity, computed price and remove button', () => {
+    const el = cartRow({ id: 3, nombre: 'Vela lavanda', precio: '5000', qty: 2 });
+    expect(el.dataset.cartId).toBe('3');
+    expect(el.querySelector('.cart-row__name').textContent).toBe('Vela lavanda');
+    expect(el.querySelector('.cart-row__qty').value).toBe('2');
+    expect(el.querySelector('.cart-row__price').textContent).toBe('$10.000');
+    expect(el.querySelector('.cart-row__remove').dataset.removeFromCart).toBe('3');
   });
 });
 
