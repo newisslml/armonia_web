@@ -1,0 +1,25 @@
+# Notas del equipo (Obsidian) — no va a producción
+Vault-Armonia/
+
+# Backup bajado del hosting real, solo para armar el entorno local (pesado, no versionar)
+local-import/
+
+# Artefactos generados (zip del theme, contenido para copiar/pegar) — se regeneran, no se versionan
+deploy/
+
+# Entorno local (Docker)
+docker/wp-cli.phar
+
+# WordPress genérico
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+*.log
+error_log
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:5.7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: armonia
+      MYSQL_USER: armonia
+      MYSQL_PASSWORD: armonia
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+  wordpress:
+    image: wordpress:apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: armonia
+      WORDPRESS_DB_USER: armonia
+      WORDPRESS_DB_PASSWORD: armonia
+      WORDPRESS_TABLE_PREFIX: monas_wp_
+    ports:
+      - "8080:80"
+    volumes:
+      - ./local-import/wp-content/uploads:/var/www/html/wp-content/uploads
+      - ./local-import/wp-content/plugins:/var/www/html/wp-content/plugins
+      - ./local-import/wp-content/themes/monas-template:/var/www/html/wp-content/themes/monas-template
+      - ./local-import/wp-content/themes/monas-template-woo:/var/www/html/wp-content/themes/monas-template-woo
+      - ./wp-content/themes/armonia-child:/var/www/html/wp-content/themes/armonia-child
+      - ./docker/php-custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/wp-cli.phar:/usr/local/bin/wp-cli.phar
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+
+volumes:
+  db_data:
