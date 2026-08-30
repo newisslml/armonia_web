@@ -109,8 +109,8 @@ footer .tnp-subscription form .tnp-submit{ line-height:40px; padding-top:0; padd
 
 #index #section2{}
 #index #section2 .titulo_seccion{ width:100%; text-align: center;}
-#index #section2 .cols{ display: flex; justify-content: space-between;}
-#index #section2 .cols .col{ margin-bottom:10px; background-size: cover; background-position: center; }
+#index #section2 .cols{ display: flex; flex-wrap: wrap; justify-content: space-between;}
+#index #section2 .cols .col{ width:100%; margin-bottom:10px; background-size: cover; background-position: center; }
 #index #section2 .cols .col a{ display:flex;  flex-direction: column; justify-content: flex-end; align-items: center; height:300px; padding:30px 20px; text-align: center; background-color:rgba(255,255,255,.3); transition: all 0.2s ease; }
 #index #section2 .cols .col a h2{ text-transform: uppercase; font-weight:700; -webkit-text-stroke-width: 1px; -webkit-text-stroke-color: black; color:rgba(0,0,0,0); font-size:2.2rem; line-height:1; }
 #index #section2 .cols .col:last-child{ margin-bottom:10px;  }

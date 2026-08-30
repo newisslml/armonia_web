@@ -50,16 +50,36 @@ WOOCOMMERCE
 //////////////////////////////////////////////////////////*/
 function claserama_edit_checkout_fields($fields){
      unset($fields['billing']['billing_postcode']);
-    
-    
-    
+
+
+
      $fields['billing']['billing_country']['priority'] = 31;
      $fields['billing']['billing_state']['priority'] = 32;
      $fields['billing']['billing_city']['priority'] = 33;
-    
+     $fields['billing']['billing_city']['label'] = 'Comuna';
+
+     if ( isset( $fields['shipping']['shipping_city'] ) ) {
+         $fields['shipping']['shipping_city']['label'] = 'Comuna';
+     }
+
+     $fields['billing']['billing_phone']['placeholder'] = '+56912345678';
+     $fields['billing']['billing_phone']['custom_attributes'] = array(
+         'pattern'  => '\+569[0-9]{8}',
+         'title'    => 'Formato: +56 seguido de 9 y 8 dígitos, ej: +56912345678',
+         'maxlength' => '12',
+     );
+
      return $fields;
 }
 add_filter('woocommerce_checkout_fields','claserama_edit_checkout_fields');
+
+function monas_validar_telefono_checkout(){
+    $phone = isset( $_POST['billing_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['billing_phone'] ) ) : '';
+    if ( $phone && ! preg_match( '/^\+569[0-9]{8}$/', $phone ) ) {
+        wc_add_notice( 'El teléfono debe tener el formato +56912345678.', 'error' );
+    }
+}
+add_action( 'woocommerce_checkout_process', 'monas_validar_telefono_checkout' );
 
 
 
