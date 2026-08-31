@@ -186,6 +186,16 @@ function ts_quantity_plus_minus() {
 add_filter( 'loop_shop_per_page', function( $cols ) { return 30; } );
 
 
+/* ponytail: en las páginas de categoría, WooCommerce inserta antes de los productos unas
+   "tarjetas" de subcategoría que en este theme salen sin imagen y ensucian la vista. La
+   navegación por categorías ya la resuelve el desplegable propio de archive-product.php,
+   así que forzamos que la tienda y todas las categorías muestren SOLO productos.
+   (Anula también el ajuste "Display type" de cada categoría en el admin.) */
+add_filter( 'woocommerce_get_loop_display_mode', 'armonia_tienda_solo_productos' );
+function armonia_tienda_solo_productos( $display_mode ) {
+    return 'products';
+}
+
 
 add_shortcode ('woo_cart_but', 'woo_cart_but' );
 // Create Shortcode for WooCommerce Cart Menu Item
@@ -277,7 +287,119 @@ function ayudawp_ocultar_agotados( $q ) {
     remove_action( 'pre_get_posts', 'ayudawp_ocultar_agotados' );
 }
 
-/* 
+
+/*//////////////////////////////////////////////////////////
+BUSCADOR: resultados por categoría/etiqueta + sugerencias
+//////////////////////////////////////////////////////////*/
+
+// La búsqueda del sitio es para la tienda: que sólo devuelva productos (search.php asume que todo resultado es un producto).
+function armonia_buscador_solo_productos( $q ) {
+    if ( $q->is_search() && $q->is_main_query() && ! is_admin() ) {
+        $q->set( 'post_type', 'product' );
+    }
+}
+add_action( 'pre_get_posts', 'armonia_buscador_solo_productos' );
+
+// El buscador de WordPress sólo compara contra título/contenido del producto, nunca contra el nombre
+// de su categoría o etiqueta. Por eso "aromaterapia" sólo traía productos que tenían esa palabra escrita
+// en el nombre, dejando afuera el resto de los productos correctamente clasificados en esa categoría.
+// Acá sumamos, como alternativa OR dentro del mismo bloque de búsqueda, los productos cuya categoría o
+// etiqueta calza con el término buscado.
+function armonia_buscador_incluye_categorias( $search, $wp_query ) {
+    global $wpdb;
+
+    if ( empty( $search ) || ! $wp_query->is_search() || is_admin() ) {
+        return $search;
+    }
+    $term = $wp_query->get( 's' );
+    if ( empty( $term ) ) {
+        return $search;
+    }
+
+    $like = '%' . $wpdb->esc_like( $term ) . '%';
+
+    $post_ids = $wpdb->get_col( $wpdb->prepare(
+        "SELECT DISTINCT tr.object_id
+         FROM {$wpdb->term_relationships} tr
+         INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+         INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+         WHERE tt.taxonomy IN ('product_cat','product_tag') AND t.name LIKE %s",
+        $like
+    ) );
+
+    if ( empty( $post_ids ) ) {
+        return $search;
+    }
+
+    $ids_sql = implode( ',', array_map( 'intval', $post_ids ) );
+    $trimmed = rtrim( $search );
+
+    // $search llega como " AND ((post_title LIKE ..) OR (..)) " (fragmento aislado de WP_Query::parse_search()).
+    // Le quitamos el último paréntesis de cierre, agregamos la condición extra y lo volvemos a cerrar.
+    if ( substr( $trimmed, -1 ) === ')' ) {
+        $search = substr( $trimmed, 0, -1 ) . " OR ({$wpdb->posts}.ID IN ({$ids_sql}))) ";
+    }
+
+    return $search;
+}
+add_filter( 'posts_search', 'armonia_buscador_incluye_categorias', 10, 2 );
+
+// Sugerencias en vivo mientras se escribe en la barra de búsqueda (categorías + productos).
+function armonia_buscador_sugerencias() {
+    $term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
+    if ( mb_strlen( $term ) < 2 ) {
+        wp_send_json( array() );
+    }
+
+    $resultados = array();
+
+    $categorias = get_terms( array(
+        'taxonomy'   => 'product_cat',
+        'name__like' => $term,
+        'number'     => 3,
+        'hide_empty' => true,
+    ) );
+    if ( ! is_wp_error( $categorias ) ) {
+        foreach ( $categorias as $cat ) {
+            $resultados[] = array(
+                'tipo'  => 'categoria',
+                'texto' => $cat->name,
+                'url'   => get_term_link( $cat ),
+            );
+        }
+    }
+
+    $productos = get_posts( array(
+        'post_type'      => 'product',
+        's'              => $term,
+        'search_columns' => array( 'post_title' ),
+        'posts_per_page' => 6,
+        'post_status'    => 'publish',
+    ) );
+    foreach ( $productos as $producto ) {
+        $wc_producto = wc_get_product( $producto );
+        $resultados[] = array(
+            'tipo'   => 'producto',
+            'texto'  => get_the_title( $producto ),
+            'precio' => $wc_producto ? wp_strip_all_tags( $wc_producto->get_price_html() ) : '',
+            'url'    => get_permalink( $producto ),
+        );
+    }
+
+    wp_send_json( $resultados );
+}
+add_action( 'wp_ajax_armonia_buscador_sugerencias', 'armonia_buscador_sugerencias' );
+add_action( 'wp_ajax_nopriv_armonia_buscador_sugerencias', 'armonia_buscador_sugerencias' );
+
+function armonia_buscador_localize() {
+    wp_localize_script( 'child-scripts', 'ArmoniaBuscador', array(
+        'ajax_url' => admin_url( 'admin-ajax.php' ),
+    ) );
+}
+add_action( 'wp_enqueue_scripts', 'armonia_buscador_localize', 12 );
+
+
+/*
 function mode_maintenance(){     if(!current_user_can('edit_themes') || !is_user_logged_in()){         wp_die('<div style="border:solid 1px grey;"><h1 style="color:#FF942A; text-align:center; text-transform:uppercase;">Sitio en Mantenimiento</h1><p style="text-align:center; font-size:18px;">Estamos trabajando en el nuevo sitio ¡en breve estaremos online!</p></div>', 'Sitio en Mantenimiento', array( 'response' => 503 ));      } } add_action('init', 'mode_maintenance'); 
 */
 

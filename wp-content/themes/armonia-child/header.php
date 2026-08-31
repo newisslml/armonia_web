@@ -146,7 +146,15 @@ $meta_description = trim( preg_replace( '/\s+/', ' ', $meta_description ) );
         
         <div id="extra_btns">
         <?php include (STYLESHEETPATH.'/woocommerce/woo_menu.php'); ?>
-        <div class="search_btn"></div>
+        <div class="search_box">
+            <div class="mini_search_form">
+                <form role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>" autocomplete="off">
+                    <input type="search" id="armonia_search_input" class="search_field" placeholder="<?php echo esc_attr_x( 'Que buscas?', 'placeholder', 'radiate' ); ?>" value="<?php echo esc_attr( get_search_query() ); ?>" name="s">
+                    <button type="submit" class="search_submit" aria-label="<?php echo esc_attr_x( 'Buscar', 'submit button', 'radiate' ); ?>"></button>
+                </form>
+                <div class="search_suggestions" id="armonia_search_suggestions" hidden></div>
+            </div>
+        </div>
         </div>
         
         

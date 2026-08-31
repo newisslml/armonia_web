@@ -1,5 +1,5 @@
 /*
-Theme Name: Monas Template - Woocommerce
+Theme Name: Armonia Child
 Theme URI: https://www.monas.cl
 Author: Monas Boutique Creativa
 Author URI: https://www.monas.cl
@@ -8,7 +8,7 @@ Version: 2020.1
 License: GNU General Public License
 License URI: https://www.gnu.org/licenses/gpl.html
 
-Template: monas-template
+Template: monas-template-woo
 Monas Template © 2011-2020 Monas
 */
 
@@ -70,6 +70,21 @@ header .menu{ display:none; }
 header .menu_class a{ color:#ddd; font-size:.9rem;}
 header .menu_class a:hover{ color:#fff;}
 header .menu_class  ul li ul a{ color:#ddd; font-size:.8rem;}
+
+/* ponytail: barra de búsqueda visible en el header (antes era un ícono de lupa que abría un overlay) */
+header #extra_btns .search_box{ position:relative; margin-left:8px; }
+header #extra_btns .mini_search_form{ position:relative; }
+header #extra_btns .mini_search_form .search_field{ width:70px; }
+header #extra_btns .mini_search_form .search_submit{ flex-shrink:0; }
+
+/* ponytail: sugerencias en vivo del buscador (categorías + productos que calzan) */
+.search_suggestions{ position:absolute; top:100%; right:0; margin-top:4px; width:280px; max-width:90vw; background:#fff; border:#ddd 1px solid; z-index:50; max-height:320px; overflow-y:auto; text-align:left; box-shadow:0 8px 20px rgba(0,0,0,.12); }
+.search_suggestions[hidden]{ display:none; }
+.search_suggestions a{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 12px; font-size:.75rem; color:#333; border-bottom:#f2f2f2 1px solid; }
+.search_suggestions a:last-child{ border-bottom:none; }
+.search_suggestions a:hover, .search_suggestions a.is-active{ background:#faf3e8; color:#8f6538; }
+.search_suggestions a.suggestion-categoria{ font-weight:600; color:#b8874f; text-transform:uppercase; font-size:.65rem; letter-spacing:.03em; background:#faf3e8; }
+.search_suggestions .precio{ color:#999; white-space:nowrap; font-size:.7rem; }
 
 
 #instagram .wpmi-list .wpmi-item{ display:none; width:33.333%; }
@@ -145,9 +160,11 @@ footer .tnp-subscription form .tnp-submit{ line-height:40px; padding-top:0; padd
     
 
 /*------------------------ TABLET ------------------------------*/
-@media screen and (min-width: 768px){ 
-    
-.woocommerce ul.products li.product { width: calc(33.333% - 15px); }    
+@media screen and (min-width: 768px){
+
+.woocommerce ul.products li.product { width: calc(33.333% - 15px); }
+
+header #extra_btns .mini_search_form .search_field{ width:130px; }
 
 #instagram .wpmi-list .wpmi-item{ display:none; width:25%; }
 #instagram .wpmi-list .wpmi-item:nth-child(-n + 6){ display: none; }
@@ -171,6 +188,7 @@ section .wrap{ padding-top:60px; padding-bottom:60px;}
     
 header{ border-bottom:none; }
 header #logo_top{ height:50px; }
+header #extra_btns .mini_search_form .search_field{ width:180px; }
 header .menu{ background-color:#000; display: block; }
 header .menu .wrap{ text-align: left; justify-content: flex-start; }
 header .menu_class ul li{ margin:0; }

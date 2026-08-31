@@ -12,8 +12,14 @@
 
     <?php while ( have_rows('destacados') ) : the_row(); ?>
     
-        <?php $icono = get_sub_field('fondo'); $size = 'large'; ?>
-        <div class="slide" style="background-image:url('<?php echo wp_get_attachment_image_url( $icono, $size ); ?>'); " >
+        <?php
+        $icono = get_sub_field('fondo');
+        // Banner full-width: se sirve el archivo original ('full') en vez del recorte 'large' (~1024px),
+        // que en pantallas grandes / retina se ve borroso. Fallback a 'large' si no hubiera original.
+        $fondo_url = $icono ? wp_get_attachment_image_url( $icono, 'full' ) : '';
+        if ( ! $fondo_url ) { $fondo_url = $icono ? wp_get_attachment_image_url( $icono, 'large' ) : ''; }
+        ?>
+        <div class="slide" style="background-image:url('<?php echo esc_url( $fondo_url ); ?>'); " >
         <div class="wrap " id="">
             <?php
             $term = get_sub_field('link');
