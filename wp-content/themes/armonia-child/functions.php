@@ -398,6 +398,24 @@ function armonia_buscador_localize() {
 }
 add_action( 'wp_enqueue_scripts', 'armonia_buscador_localize', 12 );
 
+/* ponytail: aclara en "Detalles de la cuenta" que dejar la contraseña en blanco no la cambia
+   (pedido en tarea urgente). JS en vez de sobreescribir form-edit-account.php entero. */
+add_action( 'wp_footer', 'monas_account_password_hint' );
+function monas_account_password_hint() {
+    if ( ! function_exists( 'is_account_page' ) || ! is_account_page() || ! is_wc_endpoint_url( 'edit-account' ) ) {
+        return;
+    }
+    ?>
+    <script>
+    jQuery(function($){
+        var $pwd = $('#password_1').closest('p');
+        if ( $pwd.length && ! $pwd.next('.monas-pwd-hint').length ) {
+            $pwd.after('<p class="monas-pwd-hint" style="font-size:.85rem;color:#777;margin-top:-10px;">Déjalos en blanco si no quieres cambiar tu contraseña actual.</p>');
+        }
+    });
+    </script>
+    <?php
+}
 
 /*
 function mode_maintenance(){     if(!current_user_can('edit_themes') || !is_user_logged_in()){         wp_die('<div style="border:solid 1px grey;"><h1 style="color:#FF942A; text-align:center; text-transform:uppercase;">Sitio en Mantenimiento</h1><p style="text-align:center; font-size:18px;">Estamos trabajando en el nuevo sitio ¡en breve estaremos online!</p></div>', 'Sitio en Mantenimiento', array( 'response' => 503 ));      } } add_action('init', 'mode_maintenance'); 

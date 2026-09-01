@@ -67,6 +67,16 @@ $nuevos_productos = new WP_Query( array(
     'posts_per_page' => 8,
     'orderby'        => 'date',
     'order'          => 'DESC',
+    /* ponytail: sin esto, productos agotados/ocultos entran a la query pero content-product.php
+       los salta en silencio (is_visible() == false), dejando huecos impares en la grilla mobile. */
+    'tax_query'      => array(
+        array(
+            'taxonomy' => 'product_visibility',
+            'field'    => 'name',
+            'terms'    => array( 'outofstock', 'exclude-from-catalog' ),
+            'operator' => 'NOT IN',
+        ),
+    ),
 ) );
 if ( $nuevos_productos->have_posts() ) : ?>
 <section id="section-nuevo"><div class="wrap" id="">
