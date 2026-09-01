@@ -40,7 +40,6 @@
             <a href="<?php echo esc_url( home_url( '/reembolso_devoluciones/' ) ); ?>">Devoluciones y reembolsos</a>
         </div>
         <div>&copy; <?php echo date('Y'); ?> Todos los derechos reservados por <?php bloginfo('title'); ?></div>
-        <div>Sitio por <a href="//monas.cl" target="_blank">Monas Boutique Creativa</a></div>
     </div>
 
 </div>
