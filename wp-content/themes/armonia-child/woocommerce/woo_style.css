@@ -52,6 +52,19 @@ form.cart .plus{ margin-right:5px;}
 .woocommerce ul.products li.product .contenido .price del{ color:#999; }
 .woocommerce ul.products li.product .contenido .price ins{ text-decoration:none; }
 
+/* WooCommerce trae su propio CSS para esto (fuente de iconos "star"), pero el theme
+   desactiva woocommerce_enqueue_styles por completo (functions.php) — recreado con
+   unicode en vez de la fuente de iconos que no se carga. */
+.woocommerce ul.products li.product .contenido .star-rating{ position:relative; display:inline-block; width:5.2em; height:1em; font-size:.75rem; line-height:1; letter-spacing:2px; overflow:hidden; margin-bottom:2px; }
+.woocommerce ul.products li.product .contenido .star-rating::before{ content:"\2605\2605\2605\2605\2605"; color:#ddd; }
+.woocommerce ul.products li.product .contenido .star-rating span{ position:absolute; top:0; left:0; overflow:hidden; white-space:nowrap; }
+.woocommerce ul.products li.product .contenido .star-rating span::before{ content:"\2605\2605\2605\2605\2605"; color:#b8874f; }
+.woocommerce ul.products li.product .contenido .star-rating strong{ display:none; }
+
+.woocommerce ul.products li.product .contenido .stock{ font-size:.7rem; margin:2px 0 0; }
+.woocommerce ul.products li.product .contenido .stock.in-stock{ color:#5a8a5a; }
+.woocommerce ul.products li.product .contenido .stock.out-of-stock{ color:#b23b3b; }
+
 .woocommerce ul.products li.product .contenido a[rel="tag"]:hover{ color:#333; }
 
 

@@ -70,8 +70,33 @@ $meta_description = trim( preg_replace( '/\s+/', ' ', $meta_description ) );
 <meta property="og:image:height" content="200" />
 <meta property="fb:app_id" content="<?php the_field('facebook_app_id',13); ?>"/>
 
- 
-       
+<script type="application/ld+json">
+<?php
+$local_business = array(
+    '@context'  => 'https://schema.org',
+    '@type'     => 'LocalBusiness',
+    'name'      => get_bloginfo( 'name' ),
+    'url'       => home_url( '/' ),
+    'telephone' => '+56997617459',
+    'email'     => 'armonia.contacto@gmail.com',
+    'address'   => array(
+        '@type'           => 'PostalAddress',
+        'streetAddress'   => 'Av Italia 1317 local 1',
+        'addressLocality' => 'Providencia',
+        'addressRegion'   => 'Santiago',
+        'addressCountry'  => 'CL',
+    ),
+);
+$business_image = wp_get_attachment_image_url( get_field( 'share_image', 13 ), 'medium-square' );
+if ( $business_image ) {
+    $local_business['image'] = $business_image;
+}
+echo wp_json_encode( $local_business );
+?>
+</script>
+
+
+
 <?php wp_head(); ?>
 </head>
 <body <?php body_class(''); ?>>

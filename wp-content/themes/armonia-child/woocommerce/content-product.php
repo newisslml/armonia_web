@@ -36,7 +36,9 @@ if ( empty( $product ) || ! $product->is_visible() ) {
         <!-- <?php global $product;  echo $product->get_categories( ', ', ' ' . _n( ' ', '  ', $cat_count, 'woocommerce' ) . ' ', ' ' ); ?> -->
         <?php $wp_query->get_queried_object()->term_id; ?>
         <a href="<?php the_permalink(); ?>"><?php woocommerce_template_single_title(); ?></a>
+        <?php woocommerce_template_loop_rating(); ?>
         <?php woocommerce_template_single_price(); ?>
+        <?php echo wc_get_stock_html( $product ); ?>
         <!--<?php woocommerce_template_single_excerpt(); ?>-->
     </div>
         

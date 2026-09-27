@@ -60,6 +60,13 @@ get_header( 'shop' ); ?>
        
         <?php woocommerce_template_single_add_to_cart(); ?>
 
+        <?php
+        // Template no dispara el hook woocommerce_single_product_summary (usa las funciones sueltas
+        // de arriba en vez del hook completo), así que el schema.org de Producto de WooCommerce
+        // nunca se generaba. Se llama directo al generador, sin duplicar el markup ya impreso arriba.
+        wc()->structured_data->generate_product_data();
+        ?>
+
         <?php if ( get_the_content() ) { ?>
         <div class="pre_formated_content descripcion_producto"><?php the_content(); ?></div>
         <?php } ?>
