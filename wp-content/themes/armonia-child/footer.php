@@ -25,7 +25,7 @@
     
     
     <div id="contacto" class="wrap_col">
-        <div class="titulo_footer">Newsletter<hr></div>
+        <div class="titulo_footer">Únete a la comunidad Armonía<hr></div>
         <div><?php echo do_shortcode('[newsletter]'); ?></div>
         <br>
         <div class="titulo_footer">Puedes pagar con<hr></div>
