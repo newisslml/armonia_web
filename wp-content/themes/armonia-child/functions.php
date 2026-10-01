@@ -417,6 +417,176 @@ function monas_account_password_hint() {
     <?php
 }
 
+/*//////////////////////////////////////////////////////////
+VERIFICACIÓN DE CORREO EN EL REGISTRO (tarea Trello #43)
+Al crear una cuenta desde "Mi cuenta" la cuenta queda SIN verificar: se manda
+un correo con un enlace y no se puede iniciar sesión hasta confirmarlo. Así se
+evita que entren correos falsos o mal escritos que después se usan como dato
+real (facturación, envíos, avisos).
+Solo afecta a cuentas creadas por el formulario de registro DESPUÉS de este
+deploy. Las cuentas viejas, las de admin y las creadas dentro del checkout no
+se tocan (nunca reciben la marca "sin verificar").
+//////////////////////////////////////////////////////////*/
+
+define( 'ARMONIA_VERIF_META',       '_armonia_email_verificado' );   // 'no' | 'si'
+define( 'ARMONIA_VERIF_TOKEN_META', '_armonia_email_verif_token' );  // hash del token, nunca el token en claro
+define( 'ARMONIA_VERIF_SENT_META',  '_armonia_email_verif_enviado' );// timestamp del último envío
+define( 'ARMONIA_VERIF_TTL',        7 * DAY_IN_SECONDS );            // validez del enlace
+
+// Hash estable del token para guardar en la BD.
+function armonia_verif_hash( $token ) {
+    return hash_hmac( 'sha256', $token, wp_salt( 'auth' ) );
+}
+
+function armonia_verif_url_cuenta() {
+    $url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : '';
+    return $url ? $url : home_url( '/' );
+}
+
+// Genera un token nuevo, lo guarda y manda el correo de verificación.
+function armonia_verif_generar_y_enviar( $user_id ) {
+    $user = get_userdata( $user_id );
+    if ( ! $user ) {
+        return;
+    }
+
+    $token = wp_generate_password( 32, false );
+    update_user_meta( $user_id, ARMONIA_VERIF_TOKEN_META, armonia_verif_hash( $token ) );
+    update_user_meta( $user_id, ARMONIA_VERIF_SENT_META, time() );
+
+    $enlace = add_query_arg(
+        array(
+            'armonia_verificar' => rawurlencode( $token ),
+            'uid'               => $user_id,
+        ),
+        armonia_verif_url_cuenta()
+    );
+
+    $sitio  = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+    $asunto = sprintf( 'Confirma tu correo en %s', $sitio );
+
+    $cuerpo  = '<p>¡Hola!</p>';
+    $cuerpo .= '<p>Gracias por crear una cuenta en <strong>' . esc_html( $sitio ) . '</strong>. ';
+    $cuerpo .= 'Para activarla, confirma que este correo es tuyo:</p>';
+    $cuerpo .= '<p style="margin:24px 0;"><a href="' . esc_url( $enlace ) . '" ';
+    $cuerpo .= 'style="background:#111;color:#fff;padding:12px 22px;text-decoration:none;border-radius:4px;display:inline-block;">Confirmar mi correo</a></p>';
+    $cuerpo .= '<p>O pega este enlace en tu navegador:<br><span style="word-break:break-all;">' . esc_url( $enlace ) . '</span></p>';
+    $cuerpo .= '<p style="color:#777;font-size:.9em;">El enlace vence en 7 días. Si no creaste esta cuenta, ignora este mensaje.</p>';
+
+    $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+    // Usa el remitente configurado en WooCommerce si está disponible.
+    if ( function_exists( 'WC' ) && WC()->mailer() ) {
+        $mailer    = WC()->mailer();
+        $headers[] = sprintf( 'From: %s <%s>', $mailer->get_from_name(), $mailer->get_from_address() );
+    }
+
+    wp_mail( $user->user_email, $asunto, $cuerpo, $headers );
+}
+
+// Al registrarse desde el formulario de "Mi cuenta": marcar sin verificar,
+// mandar el correo y cortar el inicio de sesión automático.
+function armonia_verif_al_registrar( $auth, $user_id ) {
+    update_user_meta( $user_id, ARMONIA_VERIF_META, 'no' );
+    armonia_verif_generar_y_enviar( $user_id );
+    wc_add_notice(
+        'Te enviamos un correo para confirmar tu cuenta. Revisa tu bandeja (y la carpeta de spam) y haz clic en el enlace antes de iniciar sesión.',
+        'notice'
+    );
+    return false;
+}
+add_filter( 'woocommerce_registration_auth_new_user', 'armonia_verif_al_registrar', 10, 2 );
+
+// Bloquea el login mientras la cuenta siga marcada "sin verificar".
+function armonia_verif_bloquear_login( $user ) {
+    if ( $user instanceof WP_User && 'no' === get_user_meta( $user->ID, ARMONIA_VERIF_META, true ) ) {
+        $reenviar = esc_url( add_query_arg( array( 'armonia_reenviar' => $user->ID ), armonia_verif_url_cuenta() ) );
+        return new WP_Error(
+            'armonia_email_sin_verificar',
+            'Tu cuenta todavía no está verificada. Revisa el correo que te enviamos. ' .
+            '<a href="' . $reenviar . '">Reenviar el correo de verificación</a>.'
+        );
+    }
+    return $user;
+}
+add_filter( 'wp_authenticate_user', 'armonia_verif_bloquear_login', 10, 1 );
+
+// Procesa el clic en el enlace del correo y los reenvíos.
+function armonia_verif_procesar() {
+    if ( ! function_exists( 'wc_add_notice' ) ) {
+        return;
+    }
+    $destino = armonia_verif_url_cuenta();
+
+    // --- Confirmación vía enlace del correo ---
+    if ( isset( $_GET['armonia_verificar'], $_GET['uid'] ) ) {
+        $user_id  = absint( $_GET['uid'] );
+        $token    = sanitize_text_field( wp_unslash( $_GET['armonia_verificar'] ) );
+        $guardado = get_user_meta( $user_id, ARMONIA_VERIF_TOKEN_META, true );
+        $enviado  = (int) get_user_meta( $user_id, ARMONIA_VERIF_SENT_META, true );
+        $estado   = get_user_meta( $user_id, ARMONIA_VERIF_META, true );
+
+        if ( 'no' !== $estado ) {
+            wc_add_notice( 'Tu cuenta ya estaba verificada. Puedes iniciar sesión.', 'notice' );
+        } elseif ( $guardado && hash_equals( $guardado, armonia_verif_hash( $token ) ) && ( time() - $enviado ) < ARMONIA_VERIF_TTL ) {
+            update_user_meta( $user_id, ARMONIA_VERIF_META, 'si' );
+            delete_user_meta( $user_id, ARMONIA_VERIF_TOKEN_META );
+            wc_add_notice( '¡Listo! Tu correo quedó verificado. Ya puedes iniciar sesión.', 'success' );
+        } else {
+            $reenviar = esc_url( add_query_arg( array( 'armonia_reenviar' => $user_id ), $destino ) );
+            wc_add_notice( 'El enlace de verificación no es válido o venció. <a href="' . $reenviar . '">Enviar uno nuevo</a>.', 'error' );
+        }
+
+        wp_safe_redirect( $destino );
+        exit;
+    }
+
+    // --- Reenvío del correo ---
+    if ( isset( $_GET['armonia_reenviar'] ) ) {
+        $user_id = absint( $_GET['armonia_reenviar'] );
+        $enviado = (int) get_user_meta( $user_id, ARMONIA_VERIF_SENT_META, true );
+        $estado  = get_user_meta( $user_id, ARMONIA_VERIF_META, true );
+
+        // Respuesta genérica siempre (no revela si la cuenta existe) + freno anti-spam de 60 s.
+        if ( 'no' === $estado && ( time() - $enviado ) > MINUTE_IN_SECONDS ) {
+            armonia_verif_generar_y_enviar( $user_id );
+        }
+        wc_add_notice( 'Si la cuenta necesita verificación, te enviamos un correo nuevo. Revisa tu bandeja y el spam.', 'notice' );
+        wp_safe_redirect( $destino );
+        exit;
+    }
+}
+add_action( 'template_redirect', 'armonia_verif_procesar' );
+
+// Si el usuario completa un "restablecer contraseña", ya probó que el correo es suyo.
+function armonia_verif_por_reset( $user ) {
+    if ( $user instanceof WP_User && 'no' === get_user_meta( $user->ID, ARMONIA_VERIF_META, true ) ) {
+        update_user_meta( $user->ID, ARMONIA_VERIF_META, 'si' );
+        delete_user_meta( $user->ID, ARMONIA_VERIF_TOKEN_META );
+    }
+}
+add_action( 'password_reset', 'armonia_verif_por_reset', 10, 1 );
+
+// Rechaza en el registro los correos con dominio inexistente (sin MX ni A/AAAA).
+// Chequeo barato y filtrable por si el DNS del servidor no resuelve bien.
+function armonia_verif_validar_dominio( $errors, $username = '', $password = '', $email = '' ) {
+    if ( $errors->get_error_code() || ! is_email( $email ) ) {
+        return $errors;
+    }
+    if ( ! apply_filters( 'armonia_verif_chequear_dns', true, $email ) ) {
+        return $errors;
+    }
+    $dominio = substr( strrchr( $email, '@' ), 1 );
+    if ( $dominio && function_exists( 'checkdnsrr' ) ) {
+        $ok = @checkdnsrr( $dominio, 'MX' ) || @checkdnsrr( $dominio, 'A' ) || @checkdnsrr( $dominio, 'AAAA' );
+        if ( ! $ok ) {
+            $errors->add( 'armonia_email_dominio', 'El dominio del correo no parece existir. Revisa que esté bien escrito.' );
+        }
+    }
+    return $errors;
+}
+add_filter( 'woocommerce_process_registration_errors', 'armonia_verif_validar_dominio', 10, 4 );
+
 /*
 function mode_maintenance(){     if(!current_user_can('edit_themes') || !is_user_logged_in()){         wp_die('<div style="border:solid 1px grey;"><h1 style="color:#FF942A; text-align:center; text-transform:uppercase;">Sitio en Mantenimiento</h1><p style="text-align:center; font-size:18px;">Estamos trabajando en el nuevo sitio ¡en breve estaremos online!</p></div>', 'Sitio en Mantenimiento', array( 'response' => 503 ));      } } add_action('init', 'mode_maintenance'); 
 */
